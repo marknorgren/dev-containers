@@ -1,4 +1,4 @@
-FROM ubuntu:noble
+FROM mcr.microsoft.com/devcontainers/dotnet:8.0-noble
 
 # Avoid prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -8,21 +8,24 @@ ARG USERNAME=vscode
 ARG USER_UID=2000
 ARG USER_GID=2000
 
-# Create the user and group
-RUN groupadd --gid $USER_GID $USERNAME \
-	&& useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
-	# Add sudo support
-	&& apt-get update \
-	&& apt-get install -y sudo \
-	&& echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
-	&& chmod 0440 /etc/sudoers.d/$USERNAME
+# # Create the user and group
+# RUN if getent group $USER_GID; then \
+# 	echo "Group $USER_GID exists, skipping group creation"; \
+# 	else \
+# 	groupadd --gid $USER_GID $USERNAME; \
+# 	fi \
+# 	&& useradd --uid $USER_UID --gid $USER_GID -m $USERNAME 2>/dev/null || useradd --uid $USER_UID -g $USER_GID -m $USERNAME \
+# 	# Add sudo support
+# 	&& apt-get update \
+# 	&& apt-get install -y sudo \
+# 	&& echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+# 	&& chmod 0440 /etc/sudoers.d/$USERNAME
 
 # Install required packages
 RUN apt-get update && apt-get install -y \
 	curl \
 	unzip \
 	just \
-	git \
 	&& rm -rf /var/lib/apt/lists/*
 
 # Install AWS CLI v2
