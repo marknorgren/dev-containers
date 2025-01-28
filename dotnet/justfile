@@ -1,0 +1,48 @@
+# Default recipe to run when just is called without arguments
+default:
+    @just --list
+
+# Install dependencies
+restore:
+    dotnet restore dev-containers.sln
+
+# Build the solution
+build: restore
+    dotnet build dev-containers.sln
+
+# Build release configuration
+build-release: restore
+    dotnet build dev-containers.sln -c Release
+
+# Run the application
+run: build
+    dotnet run --project DotNetDevContainer.csproj
+
+# Run in watch mode for development
+watch:
+    dotnet watch --project DotNetDevContainer.csproj run
+
+# Clean build outputs
+clean:
+    dotnet clean dev-containers.sln
+    rm -rf **/bin/ **/obj/
+
+# Run tests (when you add them)
+test:
+    dotnet test dev-containers.sln
+
+# Format code
+format:
+    dotnet format dev-containers.sln
+
+# Check code style without making changes
+lint:
+    dotnet format --verify-no-changes dev-containers.sln
+
+# Build and run in release mode
+run-release: build-release
+    dotnet run --project DotNetDevContainer.csproj -c Release
+
+# Open swagger UI in the default browser (for Unix-like systems)
+swagger:
+    xdg-open http://localhost:5000/swagger || open http://localhost:5000/swagger 
