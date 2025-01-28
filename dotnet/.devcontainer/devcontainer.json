@@ -1,34 +1,30 @@
 {
-	"name": "DotNet 8 Development",
-	"build": {
-		"dockerfile": "Dockerfile",
-		"context": ".",
-		"args": {
-			"BUILDKIT_INLINE_CACHE": "1"
-		}
-	},
-	"features": {
-		"ghcr.io/devcontainers/features/github-cli:1": {},
-		"ghcr.io/devcontainers/features/dotnet:2": {
-			"version": "8.0"
-		}
-	},
-	"customizations": {
-		"vscode": {
-			"extensions": [
-				"ms-dotnettools.csharp",
-				"ms-dotnettools.dotnet-interactive-vscode",
-				"streetsidesoftware.code-spell-checker",
-				"eamodio.gitlens"
-			],
-			"settings": {
-				"omnisharp.enableRoslynAnalyzers": true,
-				"omnisharp.enableEditorConfigSupport": true,
-				"terminal.integrated.defaultProfile.linux": "bash"
-			}
-		}
-	},
-	"forwardPorts": [5000, 5001],
-	"postCreateCommand": "dotnet restore",
-	"remoteUser": "vscode"
+  "name": "DotNet 8 Development",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.dotnet-interactive-vscode",
+        "streetsidesoftware.code-spell-checker",
+        "eamodio.gitlens"
+      ],
+      "settings": {
+        "omnisharp.enableRoslynAnalyzers": true,
+        "omnisharp.enableEditorConfigSupport": true
+      }
+    }
+  },
+  "forwardPorts": [5000, 5001],
+  "postCreateCommand": "dotnet restore",
+  "remoteUser": "vscode",
+  "containerUser": "vscode",
+  "updateRemoteUserUID": true,
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+  ],
+  "workspaceFolder": "/workspace",
+  "runArgs": ["--init"]
 }

@@ -1,40 +1,44 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0-jammy
+FROM ubuntu:noble
 
-# Install essential tools - combining RUN commands to reduce layers
-RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y install --no-install-recommends \
-        git \
-        curl \
-        vim \
-        wget \
-        unzip \
-        make \
-        python3-pip \
-        # Add any other tools you need \
-    && pip3 install --no-cache-dir awscli \
-    && curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /var/cache/apt/*
+# Avoid prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Node.js LTS in the same layer
-RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
-    && apt-get install -y nodejs \
-    && rm -rf /var/lib/apt/lists/* \
-    && npm cache clean --force
-
-# Create a non-root user
+# Create the user
 ARG USERNAME=vscode
-ARG USER_UID=1000
-ARG USER_GID=$USER_UID
+ARG USER_UID=2000
+ARG USER_GID=2000
 
+# Create the user and group
 RUN groupadd --gid $USER_GID $USERNAME \
-    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
-    && apt-get update \
-    && apt-get install -y sudo \
-    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
-    && chmod 0440 /etc/sudoers.d/$USERNAME \
-    && rm -rf /var/lib/apt/lists/*
+	&& useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+	# Add sudo support
+	&& apt-get update \
+	&& apt-get install -y sudo \
+	&& echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+	&& chmod 0440 /etc/sudoers.d/$USERNAME
 
-# [Optional] Set the default user
-USER $USERNAME 
+# Install required packages
+RUN apt-get update && apt-get install -y \
+	curl \
+	unzip \
+	just \
+	git \
+	&& rm -rf /var/lib/apt/lists/*
+
+# Install AWS CLI v2
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" \
+	&& unzip awscliv2.zip \
+	&& ./aws/install \
+	&& rm -rf aws awscliv2.zip
+
+# Create VS Code directories with proper permissions
+RUN mkdir -p /home/$USERNAME/.vscode-server/extensions \
+	/home/$USERNAME/.vscode-server-insiders/extensions \
+	&& chown -R $USERNAME:$USERNAME /home/$USERNAME/.vscode-server \
+	&& chown -R $USERNAME:$USERNAME /home/$USERNAME/.vscode-server-insiders
+
+# Set the default user
+USER $USERNAME
+
+# Set the default working directory
+WORKDIR /workspace
