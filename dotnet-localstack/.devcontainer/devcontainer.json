@@ -1,0 +1,31 @@
+{
+    "name": "C# (.NET) with LocalStack",
+    "dockerFile": "Dockerfile",
+    "mounts": [
+        "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind,consistency=cached"
+    ],
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-dotnettools.csharp",
+                "ms-azuretools.vscode-docker",
+                "formulahendry.dotnet-test-explorer"
+            ],
+            "terminal.integrated.defaultProfile.linux": "zsh",
+            "terminal.integrated.profiles.linux": {
+                "zsh": {
+                    "path": "/bin/zsh"
+                }
+            }
+        }
+    },
+    "forwardPorts": [5118, 4566],
+    "postCreateCommand": "dotnet restore && sudo chmod 666 /var/run/docker.sock",
+    "remoteUser": "vscode",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+    "workspaceFolder": "/workspace",
+    "containerEnv": {
+        "AWS_PAGER": ""
+    },
+    "runArgs": ["--network=host"]
+}
