@@ -6,25 +6,31 @@ default:
 
 # Start LocalStack container
 start-localstack: stop-localstack
+    @echo "Starting LocalStack..."
     docker run -d \
     --name localstack \
-    -p 4566:4566 \
+    --network host \
     -e SERVICES=sqs \
     -e DEFAULT_REGION=us-west-2 \
     -e AWS_ACCESS_KEY_ID=test \
     -e AWS_SECRET_ACCESS_KEY=test \
     localstack/localstack:latest
+    @echo "Waiting for LocalStack to be ready..."
+    @echo "LocalStack should be ready now"
 
 # Stop LocalStack container
 stop-localstack:
-    docker stop localstack 2>/dev/null || true
-    docker rm localstack 2>/dev/null || true
-    docker ps -a | grep localstack | awk '{print $1}' | xargs -r docker rm -f 2>/dev/null || true
-    -docker container ls -q --filter publish=4566 | xargs -r docker stop 2>/dev/null || true
+    @echo "Stopping any existing LocalStack containers..."
+    docker stop localstack >/dev/null 2>&1 || true
+    docker rm localstack >/dev/null 2>&1 || true
+    @# Clean up any stray containers that might be using port 4566
+    docker ps -q --filter publish=4566 | xargs -r docker stop >/dev/null 2>&1 || true
+    @echo "Cleanup complete"
 
 # Create SQS queue in LocalStack
 create-queue:
-    aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name test-queue
+    @echo "Creating test queue..."
+    aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name test-queue || { echo "Failed to create queue. Is LocalStack running?"; exit 1; }
 
 # List SQS queues in LocalStack
 list-queues:
@@ -70,7 +76,7 @@ clean:
     dotnet clean
 
 # Setup everything and start the application
-setup: stop-localstack start-localstack create-queue
+setup: stop-localstack start-localstack create-queue build
     @echo "LocalStack is running and queue is created"
     @echo "Starting the API..."
     just run
