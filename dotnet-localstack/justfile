@@ -1,0 +1,76 @@
+set dotenv-load := true
+
+# List available commands
+default:
+    @just --list
+
+# Start LocalStack container
+start-localstack: stop-localstack
+    docker run -d \
+    --name localstack \
+    -p 4566:4566 \
+    -e SERVICES=sqs \
+    -e DEFAULT_REGION=us-west-2 \
+    -e AWS_ACCESS_KEY_ID=test \
+    -e AWS_SECRET_ACCESS_KEY=test \
+    localstack/localstack:latest
+
+# Stop LocalStack container
+stop-localstack:
+    docker stop localstack 2>/dev/null || true
+    docker rm localstack 2>/dev/null || true
+    docker ps -a | grep localstack | awk '{print $1}' | xargs -r docker rm -f 2>/dev/null || true
+    -docker container ls -q --filter publish=4566 | xargs -r docker stop 2>/dev/null || true
+
+# Create SQS queue in LocalStack
+create-queue:
+    aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name test-queue
+
+# List SQS queues in LocalStack
+list-queues:
+    aws --endpoint-url=http://localhost:4566 sqs list-queues
+
+# Send a test message to the queue
+send-message:
+    aws --endpoint-url=http://localhost:4566 sqs send-message \
+    --queue-url http://localhost:4566/000000000000/test-queue \
+    --message-body "Test message from AWS CLI"
+
+# Receive messages from the queue
+receive-messages:
+    aws --endpoint-url=http://localhost:4566 sqs receive-message \
+    --queue-url http://localhost:4566/000000000000/test-queue \
+    --max-number-of-messages 10 \
+    --attribute-names All \
+    --message-attribute-names All
+
+# Delete a specific message from the queue using its receipt handle
+delete-message:
+    #!/usr/bin/env sh
+    echo "Enter the receipt handle:"
+    read RECEIPT_HANDLE
+    aws --endpoint-url=http://localhost:4566 sqs delete-message \
+    --queue-url http://localhost:4566/000000000000/test-queue \
+    --receipt-handle "$RECEIPT_HANDLE"
+
+# Build the .NET application
+build:
+    dotnet build
+
+# Run the application
+run:
+    dotnet run --project Api/Api.csproj
+
+# Run tests
+test:
+    dotnet test
+
+# Clean build artifacts
+clean:
+    dotnet clean
+
+# Setup everything and start the application
+setup: stop-localstack start-localstack create-queue
+    @echo "LocalStack is running and queue is created"
+    @echo "Starting the API..."
+    just run
