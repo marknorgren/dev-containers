@@ -5,7 +5,7 @@ default:
     @just --list
 
 # Start LocalStack container
-start-localstack:
+start-localstack: stop-localstack
     docker run -d \
     --name localstack \
     -p 4566:4566 \
@@ -20,6 +20,7 @@ stop-localstack:
     docker stop localstack 2>/dev/null || true
     docker rm localstack 2>/dev/null || true
     docker ps -a | grep localstack | awk '{print $1}' | xargs -r docker rm -f 2>/dev/null || true
+    -docker container ls -q --filter publish=4566 | xargs -r docker stop 2>/dev/null || true
 
 # Create SQS queue in LocalStack
 create-queue:
