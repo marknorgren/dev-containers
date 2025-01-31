@@ -27,5 +27,5 @@
     "containerEnv": {
         "AWS_PAGER": ""
     },
-    "runArgs": ["--network=host"]
+    "runArgs": ["--network=host", "-p=4566:4566"]
 }

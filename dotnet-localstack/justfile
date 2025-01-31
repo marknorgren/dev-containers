@@ -4,48 +4,77 @@ set dotenv-load := true
 default:
     @just --list
 
+# Create Docker network if it doesn't exist
+create-network:
+    @docker network create localstack-net 2>/dev/null || true
+
+# Wait for LocalStack to be ready
+wait-for-localstack:
+    #!/usr/bin/env bash
+    echo "Waiting for LocalStack to be ready..."
+    max_attempts=30
+    attempt=1
+    while [ $attempt -le $max_attempts ]; do
+        if curl -s http://host.docker.internal:4566/_localstack/health | grep -q '"sqs": "available"'; then
+            echo "LocalStack is ready!"
+            exit 0
+        fi
+        echo "Attempt $attempt/$max_attempts: LocalStack not ready yet..."
+        sleep 2
+        attempt=$((attempt + 1))
+    done
+    echo "LocalStack failed to become ready in time"
+    exit 1
+
 # Start LocalStack container
-start-localstack: stop-localstack
+start-localstack: stop-localstack create-network
     @echo "Starting LocalStack..."
     docker run -d \
     --name localstack \
-    --network host \
+    --network localstack-net \
+    -p 4566:4566 \
+    -p 4566:4566/udp \
     -e SERVICES=sqs \
     -e DEFAULT_REGION=us-west-2 \
     -e AWS_ACCESS_KEY_ID=test \
     -e AWS_SECRET_ACCESS_KEY=test \
+    -e DEBUG=1 \
+    -e HOSTNAME_EXTERNAL=host.docker.internal \
+    -e HOSTNAME=host.docker.internal \
+    -v "/var/run/docker.sock:/var/run/docker.sock" \
     localstack/localstack:latest
-    @echo "Waiting for LocalStack to be ready..."
-    @echo "LocalStack should be ready now"
+    @echo "LocalStack started"
+    @just wait-for-localstack
 
-# Stop LocalStack container
+# Stop LocalStack container and clean up network
 stop-localstack:
-    @echo "Stopping any existing LocalStack containers..."
-    docker stop localstack >/dev/null 2>&1 || true
-    docker rm localstack >/dev/null 2>&1 || true
-    @# Clean up any stray containers that might be using port 4566
-    docker ps -q --filter publish=4566 | xargs -r docker stop >/dev/null 2>&1 || true
-    @echo "Cleanup complete"
+    docker stop localstack 2>/dev/null || true
+    docker rm localstack 2>/dev/null || true
+    # Only remove containers that are exactly named 'localstack'
+    docker ps -a --filter "name=^/localstack$" -q | xargs -r docker rm -f 2>/dev/null || true
+    # Only stop containers using port 4566 that are not our dev container
+    docker container ls -q --filter publish=4566 --filter "name=!vsc-dotnet-localstack" | xargs -r docker stop 2>/dev/null || true
+    docker network rm localstack-net 2>/dev/null || true
 
 # Create SQS queue in LocalStack
 create-queue:
     @echo "Creating test queue..."
-    aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name test-queue || { echo "Failed to create queue. Is LocalStack running?"; exit 1; }
+    aws --no-paginate --endpoint-url=http://host.docker.internal:4566 sqs create-queue --queue-name test-queue || { echo "Failed to create queue. Is LocalStack running?"; exit 1; }
 
 # List SQS queues in LocalStack
 list-queues:
-    aws --endpoint-url=http://localhost:4566 sqs list-queues
+    aws --no-paginate --endpoint-url=http://host.docker.internal:4566 sqs list-queues
 
 # Send a test message to the queue
 send-message:
-    aws --endpoint-url=http://localhost:4566 sqs send-message \
-    --queue-url http://localhost:4566/000000000000/test-queue \
+    aws --no-paginate --endpoint-url=http://host.docker.internal:4566 sqs send-message \
+    --queue-url http://host.docker.internal:4566/000000000000/test-queue \
     --message-body "Test message from AWS CLI"
 
 # Receive messages from the queue
 receive-messages:
-    aws --endpoint-url=http://localhost:4566 sqs receive-message \
-    --queue-url http://localhost:4566/000000000000/test-queue \
+    aws --no-paginate --endpoint-url=http://host.docker.internal:4566 sqs receive-message \
+    --queue-url http://host.docker.internal:4566/000000000000/test-queue \
     --max-number-of-messages 10 \
     --attribute-names All \
     --message-attribute-names All
@@ -55,8 +84,8 @@ delete-message:
     #!/usr/bin/env sh
     echo "Enter the receipt handle:"
     read RECEIPT_HANDLE
-    aws --endpoint-url=http://localhost:4566 sqs delete-message \
-    --queue-url http://localhost:4566/000000000000/test-queue \
+    aws --no-paginate --endpoint-url=http://host.docker.internal:4566 sqs delete-message \
+    --queue-url http://host.docker.internal:4566/000000000000/test-queue \
     --receipt-handle "$RECEIPT_HANDLE"
 
 # Build the .NET application
