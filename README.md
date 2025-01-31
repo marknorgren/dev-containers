@@ -9,9 +9,9 @@ A collection of development container configuration demos for different tech sta
 
 ## Prerequisites
 
-- Docker Desktop
-- Visual Studio Code
-- Dev Containers extension for VS Code
+- [Docker Desktop](https://docs.docker.com/desktop/)
+- [Visual Studio Code](https://code.visualstudio.com/download)
+- [Dev Containers extension for VS Code](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
 
 ## Usage
 
