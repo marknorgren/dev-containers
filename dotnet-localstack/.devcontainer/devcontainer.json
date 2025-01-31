@@ -1,31 +1,39 @@
 {
-    "name": "C# (.NET) with LocalStack",
-    "dockerFile": "Dockerfile",
-    "mounts": [
-        "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind,consistency=cached"
-    ],
-    "customizations": {
-        "vscode": {
-            "extensions": [
-                "ms-dotnettools.csharp",
-                "ms-azuretools.vscode-docker",
-                "formulahendry.dotnet-test-explorer"
-            ],
-            "terminal.integrated.defaultProfile.linux": "zsh",
-            "terminal.integrated.profiles.linux": {
-                "zsh": {
-                    "path": "/bin/zsh"
-                }
-            }
+  "name": "C# (.NET) with LocalStack",
+  "dockerFile": "Dockerfile",
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind,consistency=cached"
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-azuretools.vscode-docker",
+        "formulahendry.dotnet-test-explorer",
+        "skellock.just"
+      ],
+      "terminal.integrated.defaultProfile.linux": "zsh",
+      "terminal.integrated.profiles.linux": {
+        "zsh": {
+          "path": "/bin/zsh"
         }
-    },
-    "forwardPorts": [5118, 4566],
-    "postCreateCommand": "dotnet restore && sudo chmod 666 /var/run/docker.sock",
-    "remoteUser": "vscode",
-    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
-    "workspaceFolder": "/workspace",
-    "containerEnv": {
-        "AWS_PAGER": ""
-    },
-    "runArgs": ["--network=host", "-p=4566:4566"]
+      }
+    }
+  },
+  "forwardPorts": [5118, 4566],
+  "postCreateCommand": "sudo chmod 666 /var/run/docker.sock",
+  "remoteUser": "vscode",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  "workspaceFolder": "/workspace",
+  "containerEnv": {
+    "AWS_PAGER": "",
+    "ASPNETCORE_URLS": "http://localhost:5118",
+    "HTTP_PORTS": "5118",
+    "HTTPS_PORTS": "",
+    "DOTNET_ENVIRONMENT": "Development",
+    "AWS_ACCESS_KEY_ID": "test",
+    "AWS_SECRET_ACCESS_KEY": "test",
+    "AWS_DEFAULT_REGION": "us-west-2"
+  },
+  "runArgs": ["--add-host=host.docker.internal:host-gateway", "--network=host"]
 }

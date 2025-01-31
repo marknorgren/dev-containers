@@ -15,7 +15,7 @@ wait-for-localstack:
     max_attempts=30
     attempt=1
     while [ $attempt -le $max_attempts ]; do
-        if curl -s http://host.docker.internal:4566/_localstack/health | grep -q '"sqs": "available"'; then
+        if curl -s http://localhost:4566/_localstack/health | grep -q '"sqs": "available"'; then
             echo "LocalStack is ready!"
             exit 0
         fi
@@ -94,6 +94,9 @@ build:
 
 # Run the application
 run:
+    ASPNETCORE_URLS="http://localhost:5118" \
+    HTTP_PORTS="5118" \
+    HTTPS_PORTS="" \
     dotnet run --project Api/Api.csproj
 
 # Run tests

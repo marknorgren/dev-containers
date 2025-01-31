@@ -14,6 +14,9 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/*
 
+# Update .NET workloads
+RUN dotnet workload update
+
 # Setup zsh for vscode user
 USER vscode
 WORKDIR /home/vscode
