@@ -59,16 +59,16 @@ stop-localstack:
 # Create SQS queue in LocalStack
 create-queue:
     @echo "Creating test queue..."
-    aws --no-paginate --endpoint-url=http://host.docker.internal:4566 sqs create-queue --queue-name test-queue || { echo "Failed to create queue. Is LocalStack running?"; exit 1; }
+    aws --no-paginate --endpoint-url=http://localhost:4566 sqs create-queue --queue-name test-queue || { echo "Failed to create queue. Is LocalStack running?"; exit 1; }
 
 # List SQS queues in LocalStack
 list-queues:
-    aws --no-paginate --endpoint-url=http://host.docker.internal:4566 sqs list-queues
+    aws --no-paginate --endpoint-url=http://localhost:4566 sqs list-queues
 
 # Send a test message to the queue
 send-message:
-    aws --no-paginate --endpoint-url=http://host.docker.internal:4566 sqs send-message \
-    --queue-url http://host.docker.internal:4566/000000000000/test-queue \
+    aws --no-paginate --endpoint-url=http://localhost:4566 sqs send-message \
+    --queue-url http://localhost:4566/000000000000/test-queue \
     --message-body "Test message from AWS CLI"
 
 # Receive messages from the queue
@@ -84,8 +84,8 @@ delete-message:
     #!/usr/bin/env sh
     echo "Enter the receipt handle:"
     read RECEIPT_HANDLE
-    aws --no-paginate --endpoint-url=http://host.docker.internal:4566 sqs delete-message \
-    --queue-url http://host.docker.internal:4566/000000000000/test-queue \
+    aws --no-paginate --endpoint-url=http://localhost:4566 sqs delete-message \
+    --queue-url http://localhost:4566/000000000000/test-queue \
     --receipt-handle "$RECEIPT_HANDLE"
 
 # Build the .NET application
